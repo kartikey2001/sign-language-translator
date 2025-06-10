@@ -1,0 +1,22 @@
+{
+  "name": "sign-language-translator-backend",
+  "version": "1.0.0",
+  "description": "Backend services for sign language translator - Future ML/AI processing",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
+    "test": "echo \"Backend tests not implemented yet\" && exit 0"
+  },
+  "keywords": [
+    "sign-language",
+    "ml",
+    "ai",
+    "backend",
+    "api"
+  ],
+  "author": "Created with Bolt.new",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+} 
