@@ -1,20 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: "Sign Language Translator - Made with Bolt.new",
-  description: "Real-time sign language to text translator for Google Meets - Built for Bolt Hackathon",
+  title: "SignSpeak - Real-time Sign Language Translation for Google Meet",
+  description: "Break the barrier with real-time sign language translation. Seamlessly integrate with Google Meet for inclusive communication.",
+  keywords: "sign language, translation, accessibility, Google Meet, real-time, communication",
+  authors: [{ name: "SignSpeak Team" }],
+  openGraph: {
+    title: "SignSpeak - Real-time Sign Language Translation",
+    description: "Break the barrier with real-time sign language translation for Google Meet",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -23,13 +25,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <html lang="en" className={inter.className}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
+      <body className="antialiased">
         {children}
-        </div>
       </body>
     </html>
   );
