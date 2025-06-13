@@ -2,6 +2,46 @@
 
 import { useEffect, useState, useRef } from 'react'
 
+// Speech Recognition Types
+interface SpeechRecognitionEvent {
+  resultIndex: number
+  results: {
+    length: number
+    [index: number]: {
+      length: number
+      isFinal: boolean
+      [index: number]: {
+        transcript: string
+        confidence: number
+      }
+    }
+  }
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean
+  interimResults: boolean
+  lang: string
+  maxAlternatives: number
+  start(): void
+  stop(): void
+  onstart: (() => void) | null
+  onresult: ((event: SpeechRecognitionEvent) => void) | null
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
+  onend: (() => void) | null
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition
+    webkitSpeechRecognition: new () => SpeechRecognition
+  }
+}
+
 interface SpeechCaptureProps {
   onTranscript: (text: string, isFinal: boolean) => void
 }
@@ -10,11 +50,12 @@ export default function SpeechCapture({ onTranscript }: SpeechCaptureProps) {
   const [isSupported, setIsSupported] = useState<boolean>(true)
   const [isListening, setIsListening] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
-  const recognitionRef = useRef<any>(null)
+  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const intentionalStop = useRef<boolean>(false)
 
   useEffect(() => {
     const SpeechRecognition = 
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      window.SpeechRecognition || window.webkitSpeechRecognition
 
     if (!SpeechRecognition) {
       console.warn('Web Speech API not supported in this browser')
@@ -34,7 +75,7 @@ export default function SpeechCapture({ onTranscript }: SpeechCaptureProps) {
       setError('')
     }
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       let interimTranscript = ''
       let finalTranscript = ''
 
@@ -59,15 +100,34 @@ export default function SpeechCapture({ onTranscript }: SpeechCaptureProps) {
       }
     }
 
-    recognition.onerror = (event: any) => {
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       console.error('Speech recognition error:', event.error)
-      setError(`Speech recognition error: ${event.error}`)
       setIsListening(false)
 
-      // Auto-restart on certain errors
+      // Handle different error types appropriately
+      if (event.error === 'aborted') {
+        // Aborted errors are usually intentional stops, don't show error to user
+        console.log('Speech recognition was aborted (likely intentional)')
+        return
+      }
+
+      if (event.error === 'not-allowed') {
+        setError('Microphone access denied. Please allow microphone access and refresh.')
+        return
+      }
+
+      if (event.error === 'network') {
+        setError('Network error occurred. Please check your internet connection.')
+        return
+      }
+
+      // Show error for other cases
+      setError(`Speech recognition error: ${event.error}`)
+
+      // Auto-restart on certain recoverable errors
       if (event.error === 'no-speech' || event.error === 'audio-capture') {
         setTimeout(() => {
-          if (recognitionRef.current) {
+          if (recognitionRef.current && !intentionalStop.current) {
             try {
               recognitionRef.current.start()
             } catch (err) {
@@ -82,13 +142,22 @@ export default function SpeechCapture({ onTranscript }: SpeechCaptureProps) {
       console.log('Speech recognition ended')
       setIsListening(false)
       
+      if (intentionalStop.current) {
+        console.log('Intentional stop, not restarting.')
+        intentionalStop.current = false
+        return
+      }
+
       // Auto-restart recognition to keep it continuous
       setTimeout(() => {
-        if (recognitionRef.current) {
+        if (recognitionRef.current && !intentionalStop.current) {
           try {
+            console.log('Auto-restarting speech recognition...')
             recognitionRef.current.start()
           } catch (err) {
-            console.error('Failed to restart speech recognition:', err)
+            console.error('Failed to auto-restart speech recognition:', err)
+            // If restart fails, don't keep trying indefinitely
+            setError('Speech recognition stopped. Click Start to resume.')
           }
         }
       }, 500)
@@ -96,21 +165,26 @@ export default function SpeechCapture({ onTranscript }: SpeechCaptureProps) {
 
     recognitionRef.current = recognition
 
-    // Start recognition
-    try {
-      recognition.start()
-    } catch (err) {
-      console.error('Failed to start speech recognition:', err)
-      setError('Failed to start speech recognition')
-    }
+    // Start recognition with a small delay to ensure proper initialization
+    setTimeout(() => {
+      if (recognitionRef.current && !intentionalStop.current) {
+        try {
+          recognitionRef.current.start()
+        } catch (err) {
+          console.error('Failed to start speech recognition:', err)
+          setError('Failed to start speech recognition. Please check microphone permissions.')
+        }
+      }
+    }, 100)
 
     // Cleanup
     return () => {
       if (recognitionRef.current) {
+        intentionalStop.current = true
         try {
           recognitionRef.current.stop()
         } catch (err) {
-          console.error('Error stopping speech recognition:', err)
+          console.error('Error stopping speech recognition on cleanup:', err)
         }
       }
     }
@@ -120,13 +194,17 @@ export default function SpeechCapture({ onTranscript }: SpeechCaptureProps) {
     if (!recognitionRef.current) return
 
     if (isListening) {
+      intentionalStop.current = true
       recognitionRef.current.stop()
+      setError('') // Clear any previous errors
     } else {
+      intentionalStop.current = false
+      setError('') // Clear any previous errors
       try {
         recognitionRef.current.start()
       } catch (err) {
         console.error('Failed to start speech recognition:', err)
-        setError('Failed to start speech recognition')
+        setError('Failed to start speech recognition. Please refresh the page and try again.')
       }
     }
   }
