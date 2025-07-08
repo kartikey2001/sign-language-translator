@@ -1,0 +1,8 @@
+README.md
+setup.py
+slt_translator_backend.egg-info/PKG-INFO
+slt_translator_backend.egg-info/SOURCES.txt
+slt_translator_backend.egg-info/dependency_links.txt
+slt_translator_backend.egg-info/entry_points.txt
+slt_translator_backend.egg-info/requires.txt
+slt_translator_backend.egg-info/top_level.txt
