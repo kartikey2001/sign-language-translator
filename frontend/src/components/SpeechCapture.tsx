@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-// Speech Recognition Types
+// MediaPipe Speech Recognition types
 interface SpeechRecognitionEvent {
   resultIndex: number
   results: {
@@ -47,13 +47,106 @@ interface SpeechCaptureProps {
 }
 
 export default function SpeechCapture({ onTranscript }: SpeechCaptureProps) {
-  const [isSupported, setIsSupported] = useState<boolean>(true)
-  const [isListening, setIsListening] = useState<boolean>(false)
-  const [error, setError] = useState<string>('')
+  const [isListening, setIsListening] = useState(false)
+  const [isSupported, setIsSupported] = useState(true)
+  const [error, setError] = useState('')
+  const [browserInfo, setBrowserInfo] = useState<string>('')
+  const [isClient, setIsClient] = useState(false)
+  
   const recognitionRef = useRef<SpeechRecognition | null>(null)
-  const intentionalStop = useRef<boolean>(false)
+  const isStartingRef = useRef(false)
+  const isStoppingRef = useRef(false)
+  const intentionalStop = useRef(false)
+  const hasInitialized = useRef(false)
+
+  // Client-side detection
+  useEffect(() => {
+    setIsClient(true)
+    if (typeof window !== 'undefined' && navigator) {
+      const userAgent = navigator.userAgent
+      if (userAgent.includes('Chrome')) {
+        setBrowserInfo('Chrome ✅')
+      } else if (userAgent.includes('Edge')) {
+        setBrowserInfo('Edge ✅')
+      } else {
+        setBrowserInfo('Limited Support ⚠️')
+      }
+    }
+  }, [])
+
+  // Safe start function with improved error handling
+  const safeStart = () => {
+    if (!recognitionRef.current || isStartingRef.current || isListening) {
+      console.log('Cannot start: already starting or listening')
+      return false
+    }
+
+    try {
+      isStartingRef.current = true
+      intentionalStop.current = false
+      console.log('Starting speech recognition...')
+      recognitionRef.current.start()
+      return true
+    } catch (err) {
+      const error = err as Error
+      console.error('Failed to start speech recognition:', error)
+      
+      // Handle the specific "already started" error
+      if (error.message.includes('recognition has already started')) {
+        console.log('Recognition already started, updating state...')
+        setIsListening(true)
+        isStartingRef.current = false
+        return true
+      }
+      
+      setError('Failed to start speech recognition. Please try again.')
+      isStartingRef.current = false
+      return false
+    }
+  }
+
+  // Safe stop function
+  const safeStop = () => {
+    if (!recognitionRef.current || isStoppingRef.current) {
+      console.log('Cannot stop: no recognition or already stopping')
+      return false
+    }
+
+    try {
+      isStoppingRef.current = true
+      intentionalStop.current = true
+      console.log('Stopping speech recognition...')
+      recognitionRef.current.stop()
+      return true
+    } catch (err) {
+      const error = err as Error
+      console.error('Failed to stop speech recognition:', error)
+      
+      // Handle the case where recognition is already stopped
+      if (error.message.includes('recognition has not started') || 
+          error.message.includes('not started')) {
+        console.log('Recognition already stopped, updating state...')
+        setIsListening(false)
+        isStoppingRef.current = false
+        intentionalStop.current = false
+        return true
+      }
+      
+      isStoppingRef.current = false
+      return false
+    }
+  }
 
   useEffect(() => {
+    // Only initialize speech recognition on client side
+    if (!isClient || typeof window === 'undefined') return
+    
+    // Prevent multiple initializations
+    if (hasInitialized.current) {
+      console.log('Speech recognition already initialized, skipping...')
+      return
+    }
+
     const SpeechRecognition = 
       window.SpeechRecognition || window.webkitSpeechRecognition
 
@@ -62,6 +155,8 @@ export default function SpeechCapture({ onTranscript }: SpeechCaptureProps) {
       setIsSupported(false)
       return
     }
+    
+    hasInitialized.current = true
 
     const recognition = new SpeechRecognition()
     recognition.continuous = true
@@ -70,9 +165,11 @@ export default function SpeechCapture({ onTranscript }: SpeechCaptureProps) {
     recognition.maxAlternatives = 1
 
     recognition.onstart = () => {
-      console.log('Speech recognition started')
+      console.log('Speech recognition started successfully')
       setIsListening(true)
       setError('')
+      isStartingRef.current = false
+      isStoppingRef.current = false
     }
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -101,15 +198,20 @@ export default function SpeechCapture({ onTranscript }: SpeechCaptureProps) {
     }
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error('Speech recognition error:', event.error)
-      setIsListening(false)
-
       // Handle different error types appropriately
       if (event.error === 'aborted') {
-        // Aborted errors are usually intentional stops, don't show error to user
         console.log('Speech recognition was aborted (likely intentional)')
+        setIsListening(false)
+        isStartingRef.current = false
+        isStoppingRef.current = false
         return
       }
+
+      // Log error for non-aborted cases
+      console.error('Speech recognition error:', event.error)
+      setIsListening(false)
+      isStartingRef.current = false
+      isStoppingRef.current = false
 
       if (event.error === 'not-allowed') {
         setError('Microphone access denied. Please allow microphone access and refresh.')
@@ -124,23 +226,22 @@ export default function SpeechCapture({ onTranscript }: SpeechCaptureProps) {
       // Show error for other cases
       setError(`Speech recognition error: ${event.error}`)
 
-      // Auto-restart on certain recoverable errors
+      // Auto-restart on certain recoverable errors after a delay
       if (event.error === 'no-speech' || event.error === 'audio-capture') {
         setTimeout(() => {
           if (recognitionRef.current && !intentionalStop.current) {
-            try {
-              recognitionRef.current.start()
-            } catch (err) {
-              console.error('Failed to restart speech recognition:', err)
-            }
+            console.log('Auto-restarting after recoverable error...')
+            safeStart()
           }
-        }, 1000)
+        }, 1500)
       }
     }
 
     recognition.onend = () => {
       console.log('Speech recognition ended')
       setIsListening(false)
+      isStartingRef.current = false
+      isStoppingRef.current = false
       
       if (intentionalStop.current) {
         console.log('Intentional stop, not restarting.')
@@ -150,63 +251,69 @@ export default function SpeechCapture({ onTranscript }: SpeechCaptureProps) {
 
       // Auto-restart recognition to keep it continuous
       setTimeout(() => {
-        if (recognitionRef.current && !intentionalStop.current) {
-          try {
-            console.log('Auto-restarting speech recognition...')
-            recognitionRef.current.start()
-          } catch (err) {
-            console.error('Failed to auto-restart speech recognition:', err)
-            // If restart fails, don't keep trying indefinitely
+        if (recognitionRef.current && !intentionalStop.current && !isStartingRef.current) {
+          console.log('Auto-restarting speech recognition...')
+          if (!safeStart()) {
             setError('Speech recognition stopped. Click Start to resume.')
           }
         }
-      }, 500)
+      }, 750)
     }
 
     recognitionRef.current = recognition
 
-    // Start recognition with a small delay to ensure proper initialization
+    // Start recognition with a delay to ensure proper initialization
     setTimeout(() => {
       if (recognitionRef.current && !intentionalStop.current) {
-        try {
-          recognitionRef.current.start()
-        } catch (err) {
-          console.error('Failed to start speech recognition:', err)
-          setError('Failed to start speech recognition. Please check microphone permissions.')
-        }
+        console.log('Initial start of speech recognition')
+        safeStart()
       }
-    }, 100)
+    }, 500)
 
     // Cleanup
     return () => {
+      console.log('Cleaning up speech recognition')
+      intentionalStop.current = true
       if (recognitionRef.current) {
-        intentionalStop.current = true
         try {
           recognitionRef.current.stop()
         } catch (err) {
           console.error('Error stopping speech recognition on cleanup:', err)
         }
+        recognitionRef.current = null
       }
+      // Reset all refs
+      isStartingRef.current = false
+      isStoppingRef.current = false
+      hasInitialized.current = false
     }
-  }, [onTranscript])
+  }, [onTranscript, isClient])
 
   const toggleListening = () => {
     if (!recognitionRef.current) return
 
     if (isListening) {
-      intentionalStop.current = true
-      recognitionRef.current.stop()
+      safeStop()
       setError('') // Clear any previous errors
     } else {
       intentionalStop.current = false
       setError('') // Clear any previous errors
-      try {
-        recognitionRef.current.start()
-      } catch (err) {
-        console.error('Failed to start speech recognition:', err)
+      if (!safeStart()) {
         setError('Failed to start speech recognition. Please refresh the page and try again.')
       }
     }
+  }
+
+  // Show loading state during SSR
+  if (!isClient) {
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent mr-2"></div>
+          <span className="text-gray-600">Loading speech recognition...</span>
+        </div>
+      </div>
+    )
   }
 
   if (!isSupported) {
@@ -217,7 +324,7 @@ export default function SpeechCapture({ onTranscript }: SpeechCaptureProps) {
           <div>
             <div className="text-yellow-800 font-medium">Speech Recognition Not Supported</div>
             <div className="text-yellow-700 text-sm mt-1">
-              Your browser doesn't support the Web Speech API. Try using Chrome or Edge for full functionality.
+              Your browser doesn&apos;t support the Web Speech API. Try using Chrome or Edge for full functionality.
             </div>
           </div>
         </div>
@@ -231,21 +338,29 @@ export default function SpeechCapture({ onTranscript }: SpeechCaptureProps) {
         <h4 className="text-lg font-semibold text-gray-800">Speech Recognition</h4>
         <button
           onClick={toggleListening}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          disabled={isStartingRef.current || isStoppingRef.current}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
             isListening
               ? 'bg-red-100 text-red-700 hover:bg-red-200'
               : 'bg-green-100 text-green-700 hover:bg-green-200'
           }`}
         >
-          {isListening ? 'Stop' : 'Start'}
+          {isStartingRef.current ? 'Starting...' : 
+           isStoppingRef.current ? 'Stopping...' :
+           isListening ? 'Stop' : 'Start'}
         </button>
       </div>
 
       <div className="flex items-center space-x-4 mb-3">
         <div className="flex items-center space-x-2">
-          <div className={`w-3 h-3 rounded-full ${isListening ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+          <div className={`w-3 h-3 rounded-full ${
+            isStartingRef.current ? 'bg-yellow-500 animate-pulse' :
+            isListening ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+          }`}></div>
           <span className="text-sm text-gray-600">
-            {isListening ? 'Listening...' : 'Not listening'}
+            {isStartingRef.current ? 'Starting...' :
+             isStoppingRef.current ? 'Stopping...' :
+             isListening ? 'Listening...' : 'Not listening'}
           </span>
         </div>
         
@@ -270,9 +385,7 @@ export default function SpeechCapture({ onTranscript }: SpeechCaptureProps) {
         <div>Continuous: Yes | Interim Results: Yes</div>
         <div className="mt-1">
           Status: {isSupported ? 'Supported' : 'Not Supported'} | 
-          Browser: {navigator.userAgent.includes('Chrome') ? 'Chrome ✅' : 
-                   navigator.userAgent.includes('Edge') ? 'Edge ✅' : 
-                   'Limited Support ⚠️'}
+          Browser: {browserInfo || 'Loading...'}
         </div>
       </div>
     </div>

@@ -1,0 +1,122 @@
+Metadata-Version: 2.4
+Name: slt-translator-backend
+Version: 2.0.0
+Summary: Enhanced Sign Language Translator Backend with SLT Framework
+Home-page: https://github.com/your-org/slt-translator-backend
+Author: Enhanced SLT Development Team
+Author-email: dev@slt-translator.com
+Project-URL: Bug Reports, https://github.com/your-org/slt-translator-backend/issues
+Project-URL: Source, https://github.com/your-org/slt-translator-backend
+Project-URL: Documentation, https://slt-translator-backend.readthedocs.io/
+Project-URL: SLT Framework, https://github.com/sign-language-translator/sign-language-translator
+Keywords: sign-language,translation,ASL,computer-vision,mediapipe,fastapi,websockets,real-time,accessibility,AI,machine-learning,deep-learning,gesture-recognition,hand-tracking,pose-estimation
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Education
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Multimedia :: Video
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Scientific/Engineering :: Human Machine Interfaces
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=3.8,<3.13
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi>=0.104.1
+Requires-Dist: uvicorn[standard]>=0.24.0
+Requires-Dist: websockets>=12.0
+Requires-Dist: python-multipart>=0.0.6
+Requires-Dist: sign-language-translator>=0.8.1
+Requires-Dist: opencv-python>=4.9.0.80
+Requires-Dist: numpy>=1.26.0
+Requires-Dist: mediapipe>=0.10.8
+Requires-Dist: librosa>=0.10.1
+Requires-Dist: soundfile>=0.12.1
+Requires-Dist: pydantic>=2.5.0
+Requires-Dist: aiofiles>=23.2.1
+Requires-Dist: python-jose[cryptography]>=3.3.0
+Requires-Dist: sqlalchemy>=2.0.23
+Requires-Dist: alembic>=1.13.0
+Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: redis>=5.0.1
+Requires-Dist: celery>=5.3.4
+Requires-Dist: pytest>=7.4.3
+Requires-Dist: pytest-asyncio>=0.21.1
+Requires-Dist: httpx>=0.25.2
+Requires-Dist: setuptools>=69.0.0
+Requires-Dist: wheel>=0.42.0
+Requires-Dist: pip>=23.3.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4.3; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.1; extra == "dev"
+Requires-Dist: httpx>=0.25.2; extra == "dev"
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: flake8>=6.0.0; extra == "dev"
+Requires-Dist: mypy>=1.0.0; extra == "dev"
+Provides-Extra: gpu
+Requires-Dist: tensorflow-gpu>=2.13.0; extra == "gpu"
+Requires-Dist: torch>=2.0.0; extra == "gpu"
+Requires-Dist: torchvision>=0.15.0; extra == "gpu"
+Provides-Extra: audio
+Requires-Dist: librosa>=0.10.1; extra == "audio"
+Requires-Dist: soundfile>=0.12.1; extra == "audio"
+Requires-Dist: pyaudio>=0.2.11; extra == "audio"
+Provides-Extra: database
+Requires-Dist: sqlalchemy>=2.0.23; extra == "database"
+Requires-Dist: alembic>=1.13.0; extra == "database"
+Requires-Dist: redis>=5.0.1; extra == "database"
+Provides-Extra: production
+Requires-Dist: gunicorn>=21.2.0; extra == "production"
+Requires-Dist: nginx>=1.0.0; extra == "production"
+Requires-Dist: docker>=6.0.0; extra == "production"
+Provides-Extra: all
+Requires-Dist: pytest>=7.4.3; extra == "all"
+Requires-Dist: pytest-asyncio>=0.21.1; extra == "all"
+Requires-Dist: httpx>=0.25.2; extra == "all"
+Requires-Dist: tensorflow-gpu>=2.13.0; extra == "all"
+Requires-Dist: torch>=2.0.0; extra == "all"
+Requires-Dist: librosa>=0.10.1; extra == "all"
+Requires-Dist: sqlalchemy>=2.0.23; extra == "all"
+Requires-Dist: gunicorn>=21.2.0; extra == "all"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: project-url
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+# Backend Services - Sign Language Translator
+
+## Overview
+This directory contains the backend services for the Sign Language Translator project. Currently serving as a placeholder for future development phases.
+
+## Planned Features (Week 2+)
+- Sign language gesture classification models
+- Machine learning inference endpoints
+- Real-time processing APIs
+- User session management
+- Analytics and logging
+
+## Development Status
+🚧 **Under Development** - Backend services will be implemented in future iterations.
+
+## Tech Stack (Planned)
+- **Runtime**: Node.js / Python
+- **ML Framework**: TensorFlow.js / PyTorch
+- **API**: Express.js / FastAPI
+- **Database**: MongoDB / PostgreSQL
+- **Deployment**: Docker containers
+
+---
+
+*Part of the Sign Language Translator hackathon project - Made with Bolt.new* 

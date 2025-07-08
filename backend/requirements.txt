@@ -1,0 +1,42 @@
+# Core FastAPI framework - Python 3.12 compatible
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+websockets>=12.0
+python-multipart>=0.0.6
+
+# Sign Language Translator Framework - Latest stable
+sign-language-translator>=0.8.1
+
+# Computer Vision and ML - Python 3.12 compatible versions
+opencv-python>=4.9.0.80
+numpy>=1.26.0
+mediapipe>=0.10.8
+
+# Audio processing - Updated versions
+librosa>=0.10.1
+soundfile>=0.12.1
+# pyaudio==0.2.11  # Commented out - problematic on Windows, install manually if needed
+
+# Data handling - Latest compatible
+pydantic>=2.5.0
+aiofiles>=23.2.1
+python-jose[cryptography]>=3.3.0
+
+# Database (optional) - Updated
+sqlalchemy>=2.0.23
+alembic>=1.13.0
+
+# Utilities - Latest
+python-dotenv>=1.0.0
+redis>=5.0.1
+celery>=5.3.4
+
+# Testing - Updated
+pytest>=7.4.3
+pytest-asyncio>=0.21.1
+httpx>=0.25.2
+
+# Additional dependencies for stability
+setuptools>=69.0.0
+wheel>=0.42.0
+pip>=23.3.0 

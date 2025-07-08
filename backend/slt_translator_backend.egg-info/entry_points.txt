@@ -1,0 +1,3 @@
+[console_scripts]
+slt-backend = main:main
+slt-server = main:run_server
